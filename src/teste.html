@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Temas do Vídeo</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body,
+        html {
+            height: 100%;
+            font-family: Arial, sans-serif;
+            overflow: hidden;
+        }
+
+        header,
+        footer {
+            position: fixed;
+            left: 0;
+            right: 0;
+            height: 60px;
+            background: #333;
+            color: white;
+            display: flex;
+            align-items: center;
+            padding: 0 20px;
+            z-index: 10;
+        }
+
+        header {
+            top: 0;
+        }
+
+        footer {
+            bottom: 0;
+            justify-content: center;
+        }
+
+        main {
+            display: flex;
+            margin-top: 60px;
+            margin-bottom: 60px;
+            height: calc(100% - 120px);
+        }
+
+        .sidebar {
+            width: 300px;
+            background: #f0f0f0;
+            padding: 20px;
+            overflow-y: auto;
+            border-right: 1px solid #ccc;
+        }
+
+        .content {
+            flex: 1;
+            position: relative;
+            background: black;
+        }
+
+        iframe {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+
+        .search-box {
+            margin-bottom: 15px;
+        }
+
+        .search-box input {
+            width: 100%;
+            padding: 8px;
+            font-size: 14px;
+        }
+
+        ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        li {
+            margin: 8px 0;
+            cursor: pointer;
+            color: blue;
+            text-decoration: none;
+        }
+
+        li:hover {
+            color: darkblue;
+        }
+
+        #loading {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 30px 40px;
+            border-radius: 10px;
+            text-align: center;
+            z-index: 9999;
+        }
+
+        .loader {
+            border: 6px solid #f3f3f3;
+            border-top: 6px solid #3498db;
+            border-radius: 50%;
+            width: 36px;
+            height: 36px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 10px;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <header>
+        <h2>Guia do Vídeo</h2>
+    </header>
+
+    <main>
+        <div class="sidebar">
+            <div class="search-box">
+                <input type="text" id="busca" placeholder="Pesquisar tema...">
+            </div>
+            <ul id="lista-temas"></ul>
+        </div>
+        <div class="content">
+            <iframe id="video" allow="autoplay" allowfullscreen></iframe>
+        </div>
+    </main>
+
+    <div id="loading">
+        <div class="loader"></div>
+        <p>Aguarde, carregando o vídeo...</p>
+    </div>
+
+    <footer>
+        <p>&copy; 2025 - Sua Página de Temas</p>
+    </footer>
+
+    <script>
+        const temas = [
+            { titulo: "Início", inicio: "0:00", fim: "0:20" },
+            { titulo: "O que é Multimédia em Língua Gestual Portuguesa (LGP)", inicio: "0:20", fim: "1:09" },
+            { titulo: "Principais Vantagens", inicio: "1:09", fim: "2:17" },
+            { titulo: "Tipos de Multimédia", inicio: "2:17", fim: "3:44" },
+            { titulo: "Termos de Multimédia", inicio: "3:44", fim: "4:49" },
+            { titulo: "Conclusão", inicio: "4:49", fim: "6:20" }
+        ];
+
+        const lista = document.getElementById('lista-temas');
+        const busca = document.getElementById('busca');
+        let player = null;
+        let playerPronto = false;
+        let pausaProgramada;
+
+        function tempoParaSegundos(tempo) {
+            const [min, seg] = tempo.split(':').map(Number);
+            return min * 60 + seg;
+        }
+
+        function renderizarLista(filtro = '') {
+            lista.innerHTML = '';
+            temas
+                .filter(t => t.titulo.toLowerCase().includes(filtro.toLowerCase()))
+                .forEach((tema, index) => {
+                    const li = document.createElement('li');
+                    li.textContent = tema.titulo;
+                    li.addEventListener('click', () => {
+                        if (!playerPronto) {
+                            alert("O player ainda está carregando. Aguarde um momento...");
+                            return;
+                        }
+
+                        const inicio = tempoParaSegundos(tema.inicio);
+                        const fim = tempoParaSegundos(tema.fim);
+
+                        clearTimeout(pausaProgramada);
+                        player.seekTo(inicio, true);
+                        player.playVideo();
+
+                        const duracao = (fim - inicio) * 1000;
+                        pausaProgramada = setTimeout(() => {
+                            player.pauseVideo();
+                        }, duracao);
+                    });
+                    lista.appendChild(li);
+                });
+        }
+
+        busca.addEventListener('input', () => {
+            renderizarLista(busca.value);
+        });
+
+        // Carrega a lista imediatamente
+        renderizarLista();
+
+        // Carrega a API do YouTube
+        const tag = document.createElement('script');
+        tag.src = "https://www.youtube.com/iframe_api";
+        document.body.appendChild(tag);
+
+        // Chamada pela API do YouTube
+        function onYouTubeIframeAPIReady() {
+            console.log('API do YouTube carregou. Criando player...');
+            player = new YT.Player('video', {
+                height: '100%',
+                width: '100%',
+                videoId: 'dTgfrNWaKuI',
+                playerVars: {
+                    rel: 0,
+                    mute: 1,
+                    autoplay: 0
+                },
+                events: {
+                    onReady: () => {
+                        playerPronto = true;
+                        document.getElementById('loading').style.display = 'none'; // Esconde o aviso
+                        console.log('Player pronto!');
+                    }
+                }
+            });
+        }
+    </script>
+
+</body>
+
+</html>
